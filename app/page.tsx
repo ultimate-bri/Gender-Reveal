@@ -44,7 +44,12 @@ export default function Home() {
   return (
     <div id="app-shell">
       {screen === "welcome" && (
-        <WelcomeScreen onStart={handleStart} isStarting={camera.isStarting} />
+        <WelcomeScreen
+          onStart={handleStart}
+          isStarting={camera.isStarting}
+          theme={theme}
+          onThemeChange={setTheme}
+        />
       )}
       {screen === "camera" && (
         <CameraScreen

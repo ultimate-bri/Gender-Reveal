@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { useCamera } from "@/lib/useCamera";
-import { composePhoto } from "@/lib/compositor";
+import { captureFrame, composeStrip } from "@/lib/compositor";
 import { preloadDecorations } from "@/lib/chromaKey";
 import { THEMES, allDecorationSources } from "@/lib/decorations";
 import type { CapturedPhoto, Theme } from "@/types";
+import { SHOT_COUNT } from "@/types";
 import styles from "./CameraScreen.module.css";
 
 interface Props {
@@ -40,6 +41,7 @@ export default function CameraScreen({
   const [count, setCount] = useState<number | null>(null);
   const [flash, setFlash] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [shotIndex, setShotIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const fallbackImgRef = useRef<HTMLImageElement | null>(null);
   const [fallbackImageSrc, setFallbackImageSrc] = useState<string | null>(null);
@@ -62,24 +64,31 @@ export default function CameraScreen({
   const runCaptureSequence = useCallback(
     async (source: HTMLVideoElement | HTMLImageElement, mirrored: boolean) => {
       setIsCapturing(true);
-      for (let n = COUNTDOWN_SECONDS; n >= 1; n -= 1) {
-        setCount(n);
-        await new Promise((r) => setTimeout(r, 700));
-      }
-      setCount(null);
-      setFlash(true);
-      setTimeout(() => setFlash(false), 260);
+      const frames: HTMLCanvasElement[] = [];
 
       try {
-        const photo = await composePhoto({
-          source,
-          theme: THEMES[theme],
-          mirrored,
-        });
+        for (let shot = 1; shot <= SHOT_COUNT; shot += 1) {
+          setShotIndex(shot);
+          for (let n = COUNTDOWN_SECONDS; n >= 1; n -= 1) {
+            setCount(n);
+            await new Promise((r) => setTimeout(r, 700));
+          }
+          setCount(null);
+          setFlash(true);
+          setTimeout(() => setFlash(false), 260);
+
+          frames.push(captureFrame(source, mirrored));
+          // Brief pause after the flash so the next countdown reads clearly
+          // as a fresh shot rather than a continuation of the last one.
+          await new Promise((r) => setTimeout(r, 450));
+        }
+
+        const photo = await composeStrip({ frames, theme: THEMES[theme] });
         onCaptured(photo);
       } catch (err) {
-        console.error("Failed to compose photo", err);
+        console.error("Failed to compose strip", err);
         setIsCapturing(false);
+        setShotIndex(0);
       }
     },
     [onCaptured, theme]
@@ -187,6 +196,11 @@ export default function CameraScreen({
         {count !== null && (
           <div className={styles.countdown} key={count}>
             {count}
+          </div>
+        )}
+        {isCapturing && (
+          <div className={styles.shotBadge}>
+            Photo {shotIndex} of {SHOT_COUNT}
           </div>
         )}
 

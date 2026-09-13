@@ -30,6 +30,9 @@ export interface ThemeConfig {
   accent: string;
   accentDark: string;
   accentSoft: string;
+  /** Second title-word color ("Reveal!") — the other team's accent, for the
+   *  two-tone "Gender / Reveal!" logotype. */
+  contrastDark: string;
   frameLabel: string;
   decorations: DecorationLayer[];
 }
@@ -40,5 +43,8 @@ export interface CapturedPhoto {
   theme: Theme;
   createdAt: number;
 }
+
+/** Number of individual photos captured into one vertical strip. */
+export const SHOT_COUNT = 3;
 
 export type SaveMethod = "filesystem" | "share" | "download";

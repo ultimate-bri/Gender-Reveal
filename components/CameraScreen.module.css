@@ -137,6 +137,22 @@
   }
 }
 
+.shotBadge {
+  position: absolute;
+  top: calc(0.9rem + var(--safe-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 16, 14, 0.55);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
 .exitButton,
 .flipButton {
   position: absolute;

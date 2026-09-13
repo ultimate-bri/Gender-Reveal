@@ -1,14 +1,23 @@
 "use client";
 
 import ChromaKeyedImage from "./ChromaKeyedImage";
+import { THEMES } from "@/lib/decorations";
+import type { Theme } from "@/types";
 import styles from "./WelcomeScreen.module.css";
 
 interface Props {
   onStart: () => void | Promise<void>;
   isStarting: boolean;
+  theme: Theme;
+  onThemeChange: (theme: Theme) => void;
 }
 
-export default function WelcomeScreen({ onStart, isStarting }: Props) {
+export default function WelcomeScreen({
+  onStart,
+  isStarting,
+  theme,
+  onThemeChange,
+}: Props) {
   return (
     <div className={styles.screen}>
       <div className={styles.decorTopLeft}>
@@ -33,6 +42,31 @@ export default function WelcomeScreen({ onStart, isStarting }: Props) {
         <p className={styles.subtitle}>
           Pick a team, strike a pose, and help us capture the moment.
         </p>
+
+        <div
+          className={styles.themeRow}
+          role="radiogroup"
+          aria-label="Choose a team"
+        >
+          {Object.values(THEMES).map((t) => (
+            <button
+              key={t.id}
+              role="radio"
+              aria-checked={theme === t.id}
+              className={`${styles.themeChip} ${
+                theme === t.id ? styles.themeChipActive : ""
+              }`}
+              style={{
+                // @ts-expect-error CSS custom property
+                "--chip-accent": t.accent,
+                "--chip-accent-dark": t.accentDark,
+              }}
+              onClick={() => onThemeChange(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
         <button
           className={styles.startButton}

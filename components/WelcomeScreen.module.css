@@ -49,6 +49,32 @@
   line-height: 1.4;
 }
 
+.themeRow {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+
+.themeChip {
+  --chip-accent: var(--color-pink);
+  --chip-accent-dark: var(--color-pink-dark);
+  padding: 0.65rem 1.3rem;
+  border-radius: 999px;
+  background: rgba(58, 46, 42, 0.06);
+  color: var(--color-ink-soft);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.themeChipActive {
+  background: var(--chip-accent);
+  color: var(--chip-accent-dark);
+  border-color: var(--chip-accent-dark);
+}
+
 .startButton {
   font-family: var(--font-display);
   font-weight: 700;
