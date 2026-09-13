@@ -1,24 +1,53 @@
 export type Theme = "boy" | "girl";
 
-export type Screen = "welcome" | "camera" | "result";
+export type Screen = "loading" | "welcome" | "camera" | "result";
 
 export type FacingMode = "user" | "environment";
 
-/** A single decoration image stamped onto the final photo. */
+/** Named reference points derived from the strip's actual slot geometry
+ *  (computed in the compositor), rather than raw canvas fractions. This is
+ *  what keeps stickers glued to "the corner of photo 1" or "the seam
+ *  between photo 2 and 3" even if slot size/spacing ever changes. */
+export type DecorationAnchor =
+  | "top-left"
+  | "top-right"
+  | "top-center"
+  | "seam1-left"
+  | "seam1-right"
+  | "seam1-center"
+  | "seam2-left"
+  | "seam2-right"
+  | "seam2-center"
+  | "bottom-left"
+  | "bottom-right";
+
+/** A single decoration image stamped onto the final strip. */
 export interface DecorationLayer {
   /** Path under /public used to load + chroma-key the source art. */
   src: string;
-  /** Position + size expressed as a fraction of the canvas (0–1), so the
-   *  same layout scales to any capture resolution. Anchored top-left. */
-  x: number;
-  y: number;
+  /** Geometric reference point the sticker is centered on. */
+  anchor: DecorationAnchor;
+  /** Fine-tune nudges in px, relative to the anchor point (1080-wide canvas). */
+  offsetX?: number;
+  offsetY?: number;
+  /** Sticker width as a fraction of canvas width. Height follows the
+   *  source image's aspect ratio unless overridden. */
   width: number;
-  /** Height is derived from the source aspect ratio unless provided. */
   height?: number;
+  /** Crop a rectangular slice out of the source image before drawing it —
+   *  fractions (0-1) of the source's natural width/height. Defaults to
+   *  the full image (cropX/cropY 0, cropWidth/cropHeight 1). Lets one
+   *  wide asset (e.g. two onesies side by side on one clothesline) serve
+   *  as two separate, tightly-cropped stickers — one per theme — without
+   *  needing two separate files. */
+  cropX?: number;
+  cropY?: number;
+  cropWidth?: number;
+  cropHeight?: number;
   rotationDeg?: number;
   /** Higher draws on top. */
   z?: number;
-  /** Mirror horizontally — handy for reusing one asset on both sides of a frame. */
+  /** Mirror horizontally — handy for reusing one asset on both sides. */
   flip?: boolean;
   opacity?: number;
 }

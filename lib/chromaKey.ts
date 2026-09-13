@@ -98,11 +98,15 @@ export async function getKeyedImage(
 }
 
 /** Warms the cache for a batch of decoration sources (used on theme select
- *  so the first capture doesn't stall on image processing). */
-export function preloadDecorations(sources: string[]): void {
-  sources.forEach((src) => {
-    getKeyedImage(src).catch(() => {
-      // Swallowed: a failed preload just means the first real draw retries.
-    });
-  });
+ *  so the first capture doesn't stall on image processing). Returns a
+ *  promise that resolves once every source has settled (loaded+keyed or
+ *  failed) so callers — like the startup loading screen — can await it. */
+export function preloadDecorations(sources: string[]): Promise<void> {
+  return Promise.all(
+    sources.map((src) =>
+      getKeyedImage(src).catch(() => {
+        // Swallowed: a failed preload just means the first real draw retries.
+      })
+    )
+  ).then(() => undefined);
 }

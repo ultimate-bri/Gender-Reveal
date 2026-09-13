@@ -1,14 +1,17 @@
 import type { ThemeConfig } from "@/types";
 
 /**
- * Decoration positions are fractions of the final strip canvas (0–1),
- * anchored to the top-left of each sticker. Negative x/y and values that
- * push past 1 are intentional — real photobooth props overlap the edges
- * and the gaps between frames instead of sitting neatly inside them.
- *
- * Layout target: a classic 3-photo vertical photobooth strip — title band
- * up top, three stacked photo windows, stickers straddling the seams
- * between them, hashtag footer at the bottom.
+ * Each theme gets exactly 4 stickers — one hero corner, the theme's own
+ * onesie (just the pink one for girl, just the blue one for boy — both
+ * cropped from the same two-onesies-on-a-clothesline source image, see
+ * the `cropX`/`cropWidth` on that entry) hanging at the seam between the
+ * first and second photo, one seam accent elsewhere, and one bottom
+ * "reveal" medallion. Kept deliberately short: every asset here is a
+ * solid, fully-colored cutout (flowers, balloons, the question mark),
+ * never the thin white/outline-only style, so nothing reads as
+ * washed-out or half-rendered against the theme background. No sticker
+ * repeats within a theme, and none share an anchor, so nothing stacks on
+ * top of itself.
  */
 export const THEMES: Record<"boy" | "girl", ThemeConfig> = {
   boy: {
@@ -21,42 +24,43 @@ export const THEMES: Record<"boy" | "girl", ThemeConfig> = {
     contrastDark: "#D9578F",
     decorations: [
       {
-        src: "/decorations/flower-green.jpg",
-        x: -0.09,
-        y: 0.05,
-        width: 0.24,
-        rotationDeg: -6,
-        z: 3,
-      },
-      {
         src: "/decorations/balloon-dog.jpg",
-        x: 0.5,
-        y: 0.015,
-        width: 0.55,
+        anchor: "top-right",
+        offsetX: -40,
+        offsetY: 30,
+        width: 0.46,
         rotationDeg: 6,
         z: 2,
       },
       {
         src: "/decorations/balloons-duo.jpg",
-        x: -0.12,
-        y: 0.33,
-        width: 0.4,
+        anchor: "seam1-left",
+        offsetX: -30,
+        width: 0.36,
         rotationDeg: -5,
         z: 2,
       },
       {
-        src: "/decorations/mushrooms.jpg",
-        x: -0.1,
-        y: 0.565,
-        width: 0.32,
-        rotationDeg: 4,
-        z: 2,
+        src: "/decorations/onesies.jpg",
+        anchor: "seam1-center",
+        width: 0.34,
+        rotationDeg: 0,
+        // Right half of the shared onesies image — just the blue onesie
+        // and its half of the clothesline/clothespin, cropped tight (see
+        // public/decorations/onesies.jpg: pink onesie on the left, blue
+        // on the right, split just left of center).
+        cropX: 0.486,
+        cropY: 0.28,
+        cropWidth: 0.514,
+        cropHeight: 0.46,
+        z: 4,
       },
       {
         src: "/decorations/question-bows.jpg",
-        x: 0.56,
-        y: 0.78,
-        width: 0.44,
+        anchor: "bottom-right",
+        offsetX: -20,
+        offsetY: 60,
+        width: 0.4,
         rotationDeg: 5,
         z: 2,
       },
@@ -73,57 +77,42 @@ export const THEMES: Record<"boy" | "girl", ThemeConfig> = {
     decorations: [
       {
         src: "/decorations/flowers-red.jpg",
-        x: -0.09,
-        y: 0.045,
-        width: 0.3,
+        anchor: "top-left",
+        offsetX: 40,
+        offsetY: 30,
+        width: 0.32,
         rotationDeg: -8,
-        z: 3,
-      },
-      {
-        src: "/decorations/flower-green.jpg",
-        x: 0.68,
-        y: 0.06,
-        width: 0.26,
-        rotationDeg: 6,
-        z: 2,
-      },
-      {
-        src: "/decorations/rainbow.jpg",
-        x: -0.12,
-        y: 0.335,
-        width: 0.36,
-        rotationDeg: -3,
         z: 2,
       },
       {
         src: "/decorations/onesies.jpg",
-        x: 0.55,
-        y: 0.32,
-        width: 0.42,
-        rotationDeg: 4,
-        z: 2,
+        anchor: "seam1-center",
+        width: 0.34,
+        rotationDeg: 0,
+        // Left half of the shared onesies image — just the pink onesie
+        // and its half of the clothesline/clothespin, cropped tight (see
+        // public/decorations/onesies.jpg: pink onesie on the left, blue
+        // on the right, split just left of center).
+        cropX: 0,
+        cropY: 0.28,
+        cropWidth: 0.486,
+        cropHeight: 0.46,
+        z: 4,
       },
       {
-        src: "/decorations/flower-green.jpg",
-        x: -0.09,
-        y: 0.575,
-        width: 0.2,
-        rotationDeg: 5,
-        z: 2,
-      },
-      {
-        src: "/decorations/flowers-red.jpg",
-        x: -0.09,
-        y: 0.79,
-        width: 0.3,
-        rotationDeg: 4,
+        src: "/decorations/rainbow.jpg",
+        anchor: "seam2-left",
+        offsetX: -30,
+        width: 0.34,
+        rotationDeg: -3,
         z: 2,
       },
       {
         src: "/decorations/question-balloon.jpg",
-        x: 0.58,
-        y: 0.775,
-        width: 0.44,
+        anchor: "bottom-right",
+        offsetX: -20,
+        offsetY: 60,
+        width: 0.42,
         rotationDeg: -5,
         z: 2,
       },

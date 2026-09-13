@@ -1,34 +1,75 @@
 import { getKeyedImage } from "./chromaKey";
-import type { CapturedPhoto, ThemeConfig } from "@/types";
+import type { CapturedPhoto, DecorationAnchor, ThemeConfig } from "@/types";
 
-/** Fixed portrait strip size. Using a constant target (rather than the raw,
+/** Fixed strip width. Using a constant target (rather than the raw,
  *  device-dependent video resolution) keeps sticker layout, text size, and
- *  the crop framing identical across every phone and browser. */
+ *  crop framing identical across every phone and browser. */
 export const OUTPUT_WIDTH = 1080;
-export const OUTPUT_HEIGHT = 1760;
 
 const TOP_BORDER_H = 56;
 const HEADER_H = 190;
 const SIDE_MARGIN = 46;
-const SLOT_GAP = 22;
+const SLOT_GAP = 26;
 const FOOTER_H = 150;
 const BOTTOM_BORDER_H = 64;
 const SLOT_COUNT = 3;
 
+/** Photos are square, so the whole strip's height falls out of the width
+ *  instead of being picked independently — one less number to keep in sync. */
+const SLOT_SIZE = OUTPUT_WIDTH - SIDE_MARGIN * 2;
 const SLOTS_TOP = TOP_BORDER_H + HEADER_H;
-const SLOTS_BOTTOM = OUTPUT_HEIGHT - FOOTER_H - BOTTOM_BORDER_H;
-const SLOTS_AREA_H = SLOTS_BOTTOM - SLOTS_TOP;
-const SLOT_H = (SLOTS_AREA_H - SLOT_GAP * (SLOT_COUNT - 1)) / SLOT_COUNT;
-const SLOT_W = OUTPUT_WIDTH - SIDE_MARGIN * 2;
 
-/** Pixel rect for photo slot `i` (0-based) on the strip canvas. */
+export const OUTPUT_HEIGHT =
+  SLOTS_TOP +
+  SLOT_SIZE * SLOT_COUNT +
+  SLOT_GAP * (SLOT_COUNT - 1) +
+  FOOTER_H +
+  BOTTOM_BORDER_H;
+
+/** Pixel rect for photo slot `i` (0-based) on the strip canvas. Always
+ *  square — that's the "squared photo" the frame is built around. */
 export function getSlotRect(i: number) {
   return {
     x: SIDE_MARGIN,
-    y: SLOTS_TOP + i * (SLOT_H + SLOT_GAP),
-    width: SLOT_W,
-    height: SLOT_H,
+    y: SLOTS_TOP + i * (SLOT_SIZE + SLOT_GAP),
+    width: SLOT_SIZE,
+    height: SLOT_SIZE,
   };
+}
+
+const SLOT_RECTS = [getSlotRect(0), getSlotRect(1), getSlotRect(2)];
+
+/** Resolves a named anchor to a pixel point using the actual slot geometry,
+ *  so a sticker pinned to "the seam between photo 1 and 2" stays glued
+ *  there even if slot size/spacing changes later. */
+function anchorPoint(anchor: DecorationAnchor): { x: number; y: number } {
+  const [s0, s1, s2] = SLOT_RECTS;
+  switch (anchor) {
+    case "top-left":
+      return { x: s0.x, y: s0.y };
+    case "top-right":
+      return { x: s0.x + s0.width, y: s0.y };
+    case "top-center":
+      return { x: s0.x + s0.width / 2, y: s0.y };
+    case "seam1-left":
+      return { x: s0.x, y: (s0.y + s0.height + s1.y) / 2 };
+    case "seam1-right":
+      return { x: s0.x + s0.width, y: (s0.y + s0.height + s1.y) / 2 };
+    case "seam1-center":
+      return { x: s0.x + s0.width / 2, y: (s0.y + s0.height + s1.y) / 2 };
+    case "seam2-left":
+      return { x: s1.x, y: (s1.y + s1.height + s2.y) / 2 };
+    case "seam2-right":
+      return { x: s1.x + s1.width, y: (s1.y + s1.height + s2.y) / 2 };
+    case "seam2-center":
+      return { x: s1.x + s1.width / 2, y: (s1.y + s1.height + s2.y) / 2 };
+    case "bottom-left":
+      return { x: s2.x, y: s2.y + s2.height };
+    case "bottom-right":
+      return { x: s2.x + s2.width, y: s2.y + s2.height };
+    default:
+      return { x: 0, y: 0 };
+  }
 }
 
 async function ensureFontLoaded() {
@@ -37,6 +78,7 @@ async function ensureFontLoaded() {
     await Promise.all([
       document.fonts.load("700 64px 'Baloo 2'"),
       document.fonts.load("600 34px 'Baloo 2'"),
+      document.fonts.load("italic 600 36px 'Baloo 2'"),
     ]);
   } catch {
     // If the font API throws (rare, older browsers), we still draw with
@@ -126,10 +168,10 @@ function isVideoSource(source: PhotoSource): source is HTMLVideoElement {
 
 /**
  * Snapshots one frame from the live video (or fallback <img>) straight into
- * a same-aspect-ratio canvas, cropped/mirrored to match the on-screen
- * preview. Called once per shot, immediately, so each of the 3 poses in a
- * strip is the frame that was live *at that moment* — not whatever the
- * video happens to show later when the strip is assembled.
+ * a square canvas, cropped/mirrored to match the on-screen preview. Called
+ * once per shot, immediately, so each of the 3 poses in a strip is the
+ * frame that was live *at that moment* — not whatever the video happens to
+ * show later when the strip is assembled.
  */
 export function captureFrame(
   source: PhotoSource,
@@ -143,21 +185,21 @@ export function captureFrame(
     : source.naturalHeight;
 
   const canvas = document.createElement("canvas");
-  canvas.width = SLOT_W;
-  canvas.height = SLOT_H;
+  canvas.width = SLOT_SIZE;
+  canvas.height = SLOT_SIZE;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("2D canvas context unavailable");
 
   const { cropX, cropY, cropWidth, cropHeight } = coverCrop(
     sourceWidth,
     sourceHeight,
-    SLOT_W,
-    SLOT_H
+    SLOT_SIZE,
+    SLOT_SIZE
   );
 
   ctx.save();
   if (mirrored) {
-    ctx.translate(SLOT_W, 0);
+    ctx.translate(SLOT_SIZE, 0);
     ctx.scale(-1, 1);
   }
   ctx.drawImage(
@@ -168,8 +210,8 @@ export function captureFrame(
     cropHeight,
     0,
     0,
-    SLOT_W,
-    SLOT_H
+    SLOT_SIZE,
+    SLOT_SIZE
   );
   ctx.restore();
 
@@ -214,9 +256,9 @@ export async function composeStrip({
   ctx.fillText("Reveal!", OUTPUT_WIDTH / 2, TOP_BORDER_H + 170);
   ctx.restore();
 
-  // 4. Photo slots — white rounded frame + the captured shot inside it.
+  // 4. Photo slots — white rounded frame + the captured (square) shot inside.
   for (let i = 0; i < SLOT_COUNT; i += 1) {
-    const { x, y, width, height } = getSlotRect(i);
+    const { x, y, width, height } = SLOT_RECTS[i];
     const frame = frames[i];
 
     ctx.save();
@@ -234,8 +276,8 @@ export async function composeStrip({
     }
   }
 
-  // 5. Theme stickers, chroma-keyed to remove their green backdrop, drawn
-  //    on top so they straddle the seams between photo slots.
+  // 5. Theme stickers, chroma-keyed to remove their green backdrop, pinned
+  //    to named geometry anchors (corners/seams) so they never double up.
   const layers = [...theme.decorations].sort(
     (a, b) => (a.z ?? 0) - (b.z ?? 0)
   );
@@ -243,16 +285,28 @@ export async function composeStrip({
   for (const layer of layers) {
     try {
       const keyed = await getKeyedImage(layer.src);
+
+      // Optional crop rectangle (fractions of the source's natural size) —
+      // e.g. pulling just the pink or just the blue onesie out of one
+      // shared clothesline image instead of drawing both halves.
+      const cropXFrac = layer.cropX ?? 0;
+      const cropYFrac = layer.cropY ?? 0;
+      const cropWidthFrac = layer.cropWidth ?? 1;
+      const cropHeightFrac = layer.cropHeight ?? 1;
+      const sourceX = cropXFrac * keyed.width;
+      const sourceY = cropYFrac * keyed.height;
+      const sourceWidth = cropWidthFrac * keyed.width;
+      const sourceHeight = cropHeightFrac * keyed.height;
+
       const drawWidth = layer.width * OUTPUT_WIDTH;
-      const aspect = keyed.height / keyed.width;
+      const aspect = sourceHeight / sourceWidth;
       const drawHeight = layer.height
         ? layer.height * OUTPUT_HEIGHT
         : drawWidth * aspect;
 
-      const drawX = layer.x * OUTPUT_WIDTH;
-      const drawY = layer.y * OUTPUT_HEIGHT;
-      const centerX = drawX + drawWidth / 2;
-      const centerY = drawY + drawHeight / 2;
+      const anchor = anchorPoint(layer.anchor);
+      const centerX = anchor.x + (layer.offsetX ?? 0);
+      const centerY = anchor.y + (layer.offsetY ?? 0);
 
       ctx.save();
       ctx.globalAlpha = layer.opacity ?? 1;
@@ -265,6 +319,10 @@ export async function composeStrip({
       }
       ctx.drawImage(
         keyed.canvas,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
         -drawWidth / 2,
         -drawHeight / 2,
         drawWidth,
@@ -277,14 +335,23 @@ export async function composeStrip({
     }
   }
 
-  // 6. Hashtag footer.
+  // 6. "Thank you" footer.
   ctx.save();
-  ctx.textAlign = "left";
+  ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#fdf3e3";
-  ctx.font = "700 52px 'Baloo 2', sans-serif";
-  ctx.fillText("#GirlorBoy?", SIDE_MARGIN + 4, OUTPUT_HEIGHT - BOTTOM_BORDER_H - 78);
-  ctx.fillText("#BabyShower", SIDE_MARGIN + 4, OUTPUT_HEIGHT - BOTTOM_BORDER_H - 20);
+  ctx.font = "700 46px 'Baloo 2', sans-serif";
+  ctx.fillText(
+    "Thank You for Coming!",
+    OUTPUT_WIDTH / 2,
+    OUTPUT_HEIGHT - BOTTOM_BORDER_H - 78
+  );
+  ctx.font = "italic 600 36px 'Baloo 2', sans-serif";
+  ctx.fillText(
+    "\u2013 Mommy She & Daddy Bri",
+    OUTPUT_WIDTH / 2,
+    OUTPUT_HEIGHT - BOTTOM_BORDER_H - 24
+  );
   ctx.restore();
 
   const dataUrl = canvas.toDataURL("image/png");

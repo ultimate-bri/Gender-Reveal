@@ -1,14 +1,21 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import WelcomeScreen from "@/components/WelcomeScreen";
 import CameraScreen from "@/components/CameraScreen";
 import ResultScreen from "@/components/ResultScreen";
+import LoadingScreen from "@/components/LoadingScreen";
 import { useCamera } from "@/lib/useCamera";
+import { preloadDecorations } from "@/lib/chromaKey";
+import { allDecorationSources } from "@/lib/decorations";
 import type { CapturedPhoto, Screen, Theme } from "@/types";
 
+// Floor on how long the loading screen stays up, so on a fast/cached load
+// it still reads as an intentional splash rather than a one-frame flicker.
+const MIN_LOADING_MS = 500;
+
 export default function Home() {
-  const [screen, setScreen] = useState<Screen>("welcome");
+  const [screen, setScreen] = useState<Screen>("loading");
   const [theme, setTheme] = useState<Theme>("girl");
   const [photo, setPhoto] = useState<CapturedPhoto | null>(null);
 
@@ -19,6 +26,31 @@ export default function Home() {
   // still available once we navigate to the camera screen and its <video>
   // element mounts.
   const camera = useCamera();
+
+  // Do the one-time, non-gesture-gated setup work up front — chroma-keying
+  // every sticker and waiting on web fonts — behind a loading screen,
+  // instead of letting it happen lazily the first time a theme is chosen
+  // or the shutter is pressed (which is what used to make those first
+  // interactions feel laggy/unresponsive).
+  useEffect(() => {
+    let cancelled = false;
+
+    const ready = Promise.all([
+      preloadDecorations(allDecorationSources()),
+      typeof document !== "undefined" && "fonts" in document
+        ? document.fonts.ready
+        : Promise.resolve(),
+    ]);
+    const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_LOADING_MS));
+
+    Promise.all([ready, minDelay]).then(() => {
+      if (!cancelled) setScreen("welcome");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleStart = useCallback(async () => {
     await camera.start();
@@ -43,6 +75,7 @@ export default function Home() {
 
   return (
     <div id="app-shell">
+      {screen === "loading" && <LoadingScreen />}
       {screen === "welcome" && (
         <WelcomeScreen
           onStart={handleStart}
@@ -55,7 +88,6 @@ export default function Home() {
         <CameraScreen
           camera={camera}
           theme={theme}
-          onThemeChange={setTheme}
           onCaptured={handleCaptured}
           onExit={handleExit}
         />
@@ -66,3 +98,4 @@ export default function Home() {
     </div>
   );
 }
+

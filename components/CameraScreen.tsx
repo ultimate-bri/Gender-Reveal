@@ -12,7 +12,6 @@ import styles from "./CameraScreen.module.css";
 interface Props {
   camera: ReturnType<typeof useCamera>;
   theme: Theme;
-  onThemeChange: (theme: Theme) => void;
   onCaptured: (photo: CapturedPhoto) => void;
   onExit: () => void;
 }
@@ -22,7 +21,6 @@ const COUNTDOWN_SECONDS = 3;
 export default function CameraScreen({
   camera,
   theme,
-  onThemeChange,
   onCaptured,
   onExit,
 }: Props) {
@@ -61,6 +59,8 @@ export default function CameraScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const activeTheme = THEMES[theme];
+
   const runCaptureSequence = useCallback(
     async (source: HTMLVideoElement | HTMLImageElement, mirrored: boolean) => {
       setIsCapturing(true);
@@ -83,7 +83,7 @@ export default function CameraScreen({
           await new Promise((r) => setTimeout(r, 450));
         }
 
-        const photo = await composeStrip({ frames, theme: THEMES[theme] });
+        const photo = await composeStrip({ frames, theme: activeTheme });
         onCaptured(photo);
       } catch (err) {
         console.error("Failed to compose strip", err);
@@ -91,7 +91,7 @@ export default function CameraScreen({
         setShotIndex(0);
       }
     },
-    [onCaptured, theme]
+    [onCaptured, activeTheme]
   );
 
   const handleShutter = useCallback(() => {
@@ -204,6 +204,17 @@ export default function CameraScreen({
           </div>
         )}
 
+        <div
+          className={styles.teamBadge}
+          style={{
+            // @ts-expect-error CSS custom property
+            "--badge-accent": activeTheme.accent,
+            "--badge-accent-dark": activeTheme.accentDark,
+          }}
+        >
+          {activeTheme.label}
+        </div>
+
         <button className={styles.exitButton} onClick={onExit} aria-label="Exit to welcome screen">
           ✕
         </button>
@@ -213,34 +224,15 @@ export default function CameraScreen({
             className={styles.flipButton}
             onClick={switchCamera}
             aria-label="Switch camera"
-            disabled={isCapturing}
+            aria-busy={isStarting}
+            disabled={isCapturing || isStarting}
           >
-            ↺
+            {isStarting ? <span className={styles.flipSpinner} aria-hidden /> : "↺"}
           </button>
         )}
       </div>
 
       <div className={styles.controls}>
-        <div className={styles.themeRow} role="radiogroup" aria-label="Choose a team">
-          {(Object.values(THEMES)).map((t) => (
-            <button
-              key={t.id}
-              role="radio"
-              aria-checked={theme === t.id}
-              className={`${styles.themeChip} ${theme === t.id ? styles.themeChipActive : ""}`}
-              style={{
-                // @ts-expect-error CSS custom property
-                "--chip-accent": t.accent,
-                "--chip-accent-dark": t.accentDark,
-              }}
-              onClick={() => onThemeChange(t.id)}
-              disabled={isCapturing}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
         <button
           className={styles.shutter}
           onClick={handleShutter}
