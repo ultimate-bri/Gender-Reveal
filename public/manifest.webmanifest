@@ -1,0 +1,25 @@
+{
+  "name": "Gender Reveal Photobooth",
+  "short_name": "GR Photobooth",
+  "description": "Pick Team Boy or Team Girl, strike a pose, and share your framed photobooth keepsake.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FDF3E3",
+  "theme_color": "#FDF3E3",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

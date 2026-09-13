@@ -1,0 +1,106 @@
+:root {
+  --color-cream: #fdf3e3;
+  --color-cream-deep: #f8e4c4;
+  --color-sage: #dcefdd;
+  --color-sage-deep: #c3e4c6;
+  --color-ink: #3a2e2a;
+  --color-ink-soft: #6b5c54;
+
+  --color-blue: #9cd1f5;
+  --color-blue-dark: #3f7eb0;
+  --color-blue-soft: #eaf6ff;
+
+  --color-pink: #f9a8c9;
+  --color-pink-dark: #d9578f;
+  --color-pink-soft: #fff1f6;
+
+  --color-yellow: #f5b942;
+  --color-orange: #f2994a;
+
+  --font-display: "Baloo 2", ui-rounded, "Segoe UI", sans-serif;
+  --font-body: "Nunito", ui-rounded, "Segoe UI", sans-serif;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Prevent iOS Safari from bouncing/rubber-banding the whole page. */
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-cream);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Visible keyboard focus everywhere, even though we hide the default ring
+   on custom pill buttons for the pointer case. */
+:focus-visible {
+  outline: 3px solid var(--color-orange);
+  outline-offset: 3px;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+#app-shell {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--color-cream);
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
